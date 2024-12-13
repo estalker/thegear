@@ -25,6 +25,12 @@ class ItemCategory(models.Model):
         return f'{self.name}'
 
 
+class Storage(models.Model):
+    name = models.CharField(max_length=255)
+    order = models.IntegerField()
+    def __str__(self):
+        return f'{self.name}'
+
 class Item(models.Model):
     item_category = models.ForeignKey(ItemCategory, on_delete=models.CASCADE, verbose_name='Sub category')
     brand = models.CharField(max_length=255)
@@ -35,8 +41,10 @@ class Item(models.Model):
     info = models.TextField(blank=True, null=True)
     damaged = models.BooleanField()
     retired = models.BooleanField()
-
+    current_storage = models.ForeignKey(Storage, related_name="current_storage", on_delete=models.SET_NULL, verbose_name='Current Storage', blank=True, null=True)
+    last_storage = models.ForeignKey(Storage, related_name="last_storage", on_delete=models.SET_NULL, verbose_name='Last Storage', blank=True, null=True)
 
     def __str__(self):
         return f"{self.brand} {self.name}"
+
 

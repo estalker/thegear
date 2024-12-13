@@ -1,0 +1,19 @@
+{% extends "gearapp/base.html" %}
+
+{% block content %}
+
+<div class="card-columns">
+    {% if items %}
+        {% for item in items %}
+            <div class="card" style="width: 10rem;">
+                <img class="card-img-top" src="/{{ item.image }}" alt="Card image cap">
+                <div class="card-body">
+                    <b class="card-title">{{ item.brand }} {{ item.name }}</b>
+                    <p class="card-text">{{ item.weight }}g</p>
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+</div><!-- end div card columns -->
+
+{% endblock content %}
