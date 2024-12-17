@@ -19,6 +19,7 @@ from django.urls import path
 from gearapp.views import items_list, current_storage, usual_storage, ItemAPIView, login_view, logout_view, SignUpView, missions_list, mission_create_view, mission_view
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),

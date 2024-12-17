@@ -7,6 +7,8 @@ from .models import Item, ItemCategory, MainCategory, Mission, MissionItem
 from .serializers import ItemSerializer
 from django.contrib.auth.forms import UserCreationForm
 from .forms import MissionForm
+import re
+from collections import defaultdict
 
 # Create your views here.
 def items_list(request):
@@ -46,6 +48,7 @@ def missions_list(request):
 
     return render(request, 'gearapp/missions_list.html', context)
 
+
 def mission_create_view(request):
     # dictionary for initial data with
     # field names as keys
@@ -67,8 +70,49 @@ def mission_create_view(request):
     return render(request, "gearapp/mission_create_view.html", context)
 
 
+def parse_post_data(post_data):
+    result = defaultdict(lambda: defaultdict(list))  # Многомерный словарь для вложенных данных
+    pattern = r'^col\[(\d+)\]\[items\]\[(\d+)\]$'  # Регулярное выражение для извлечения индексов
+
+    for key, value in post_data.items():
+        match = re.match(pattern, key)
+        if match:
+            col_index = int(match.group(1))  # Индекс колонки
+            item_index = int(match.group(2))  # Индекс элемента
+            result[col_index][item_index] = value
+
+    return result
+
 def mission_view(request, id):
     context={}
+
+    if request.method == 'POST':
+        if request.user.id is not None:
+            form = MissionForm(request.POST or None)
+            if form.is_valid():
+                obj = form.save(commit=False)
+                obj.id = id
+                obj.user = request.user
+                obj.save()
+
+                MissionItem.objects.filter(mission_id = id).delete()
+
+                cols = parse_post_data(request.POST)
+                for col_index, items in cols.items():
+                    storage = MissionItem()
+                    storage.mission_id = id
+                    storage.item_id = col_index
+                    storage.save()
+                    for item_index, value in items.items():
+                        mi = MissionItem()
+                        mi.mission_id = id
+                        mi.item_id = value
+                        mi.storage_id = storage.id
+                        mi.save()
+
+
+
+
 
     if request.user.id is not None:
         mission = Mission.objects.all().filter(user_id=request.user).get(id=id)

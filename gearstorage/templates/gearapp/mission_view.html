@@ -2,9 +2,18 @@
 
 {% block content %}
     <style>
-        .col{
-            min-height: 500px;
+        .container{
+            min-height: 1000px;
             }
+        .controlpanel{
+            float: right;
+        }
+        .bootstrap-select > .dropdown-toggle, /* dropdown box */
+        .bootstrap-select > .dropdown-toggle:focus, /* dropdown :focus */
+        .bootstrap-select > .dropdown-toggle:hover /* dropdown :hover */
+        {
+          background-color: lightgrey;
+        }
     </style>
     <script type="text/javascript">
        function initializeBootstrapSelect(selector) {
@@ -18,11 +27,83 @@
             });
         }
 
-        function updateAllWeights() {
-
+        function getObjectById(id) {
+            const objects = {
+            {% for i in items %}
+                {{ i.id }}: { id: {{ i.id }}, weight: {{ i.weight }} },
+            {% endfor %}
+            {% for i in avail_luggage %}
+                {{ i.id }}: { id: {{ i.id }}, weight: {{ i.weight }} },
+            {% endfor %}
+            };
+            return objects[id] || null;
         }
 
+        // Обновление веса для всех элементов в targetlist и общего веса списка
+        function updateTargetListWeights() {
+            $('.itemlist').each(function () {
+                const $list = $(this);
+                let totalWeight = 0;
+
+                $list.find('li').each(function () {
+                    const $li = $(this);
+                    const id = $li.data('value');
+                    const object = getObjectById(id);
+                    const $weightSpan = $li.find('.weight');
+
+                    if (object && object.weight) {
+                        $weightSpan.text(`(Weight: ${object.weight})`);
+                        totalWeight += object.weight;
+                    }
+                });
+
+                 // Добавляем вес из data-value родительского .col
+                 const $parentCol = $list.closest('.col');
+                 const object = getObjectById($parentCol.data('value'));
+                 if (object && object.weight) {
+                    totalWeight += object.weight;
+                 }
+
+                // Обновляем общий вес списка
+                updateTargetListTotalWeight($list, totalWeight);
+            });
+        }
+
+         // Функция для подсчета и отображения общего веса targetlist
+        function updateTargetListTotalWeight($list, precomputedTotal = null) {
+            let totalWeight = precomputedTotal || 0;
+
+            if (!precomputedTotal) {
+                $list.find('li').each(function () {
+                    const id = $(this).data('value');
+                    const object = getObjectById(id);
+                    if (object && object.weight) {
+                        totalWeight += object.weight;
+                    }
+                });
+
+                 // Добавляем вес из data-value родительского .col
+                 const $parentCol = $list.closest('.col');
+                 const object = getObjectById($parentCol.data('value'));
+                 if (object && object.weight) {
+                    totalWeight += object.weight;
+                 }
+            }
+
+            const $weightDisplay = $list.siblings('.total-weight');
+            if ($weightDisplay.length) {
+                $weightDisplay.text(`Total weight: ${totalWeight}`);
+            } else {
+                $list.after(`<div class="total-weight">Total weight: ${totalWeight}</div>`);
+            }
+        }
+
+
         $(document).ready(function () {
+
+            // Проставляем веса элементам в targetlist при загрузке
+            updateTargetListWeights();
+
             // Обработчик клика на элементы dropdown
               $('.avail_luggage_item').on('click', function (e) {
                 e.preventDefault(); // Предотвращаем переход по ссылке
@@ -40,10 +121,14 @@
                 if (isAlreadyAdded) {
                     alert(`Элемент "${selectedText}" уже добавлен в список!`);
                 } else {
+                     // Получаем вес из объекта
+                     const object = getObjectById(selectedValue);
+                     const weight = object ? object.weight : 0;
+
                     // Добавляем элемент в список
                     const col = `<div class="col" data-value="${selectedValue}">
                                     <div class="p-3 border bg-light">
-                                        <h5>${selectedText}</h5>
+                                        <h5>${selectedText} (Weight: ${weight})</h5>
                                         <select class="selectpicker" id="selectpicker${selectedValue}" data-value="${selectedValue}" data-live-search="true" title="Choose one...">
                                         {% for i in items %}
                                             <option data-value="{{i.id}}">{{ i }}</option>
@@ -54,6 +139,7 @@
                                     </div>
                                 </div>`
                     $targetList.append(col);
+
                 }
 
                 initializeBootstrapSelect('.selectpicker'); // Инициализируем новый select
@@ -82,9 +168,19 @@
                     const $targetList = $(targetListSelector);
 
                     if ($targetList.length) {
+                        // Получаем вес из объекта
+                        const object = getObjectById(value);
+                        const weight = object ? object.weight : 0;
                         // Добавляем элемент в целевой список
-                        const newItem = `<li><input class="form-check-input" type="checkbox" value="${value}" id="flexCheckChecked" checked>${text}</li>`;
+                        const newItem = `<li data-value="${value}">
+                            <input class="form-check-input" type="checkbox" value="${value}" id="flexCheckChecked" checked>
+                            ${text}
+                            <span class="weight">(Weight: ${weight})</span>
+                            </li>`;
                         $targetList.append(newItem);
+
+                        // Обновляем общий вес
+                        updateTargetListTotalWeight($targetList);
                     }
 
                     // Убираем выбор
@@ -92,50 +188,97 @@
                     $select.selectpicker('refresh');
                 }
             });
+
+            updateTargetListWeights();
+
+            // Проставляем name элементам в targetlist при загрузке и при изменении
+            function updateTargetListNames() {
+                $('.col').each(function (colIndex) {
+                    const $col = $(this);
+                    const colValue = $col.data('value');
+
+                    $col.find('.itemlist li').each(function (itemIndex) {
+                        const $li = $(this);
+                        const name = `col[${colValue}][items][${itemIndex}]`;
+                        $li.find('input').attr('name', name);
+                    });
+                });
+            }
+
+            // Проставляем name при загрузке
+            updateTargetListNames();
+
+            // Переписываем updateTargetListWeights для вызова обновления name
+            const originalUpdateWeights = updateTargetListWeights;
+            updateTargetListWeights = function () {
+                originalUpdateWeights();
+                updateTargetListNames();
+            };
+
+            // Проставляем name динамически добавленным элементам
+            $(document).on('DOMNodeInserted', '.itemlist', function () {
+                updateTargetListNames();
+            });
+
         });
     </script>
-    <h1>Title: {{ data.title }}</h1>
-    Date start: {{ data.date_start }} <br />
-    Lenght: {{ data.duration }} <br />
-    Description: {{ data.description }}<br/>
-    <br />
-    <div class="dropdown">
-        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            Add lugguage
-        </button>
-        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-            {% for al in avail_luggage %}
-            <a class="dropdown-item avail_luggage_item" data-value="{{al.id}}" href="#">{{ al }}</a>
-            {% endfor %}
+    <form method="POST">
+        <!-- Security token -->
+        {% csrf_token %}
+
+        <div>
+            Title: <input id="id-title" name="title" class="form-control" value="{{ data.title }}"><br />
+            Date start: <input id="id-date_start" name="date_start" class="form-control" value="{{data.date_start|date:"Y-m-d" }}"><br />
+            Lenght: <input id="id-duration" name="duration" class="form-control" value="{{ data.duration }}"><br />
+            Description: <textarea id="id-descrition" name="description" class="form-control">{{ data.description }}</textarea><br/>
         </div>
-    </div>
-    <br />
-    <h2>Items:</h2>
-    <div class="container overflow-hidden">
-      <div class="row gx-5" id="luggage-items-list" >
-          {% for ml in mission_luggage %}
-            <div class="col" data-value="{{ml.item.id}}">
-                <div class="p-3 border bg-light">
-                    <h5>{{ ml.item }}</h5>
-                    <script>
-                        $('#selectpicker{{ml.item.id}}').selectpicker();
-                    </script>
-                    <select class="selectpicker" id="selectpicker{{ml.item.id}}" data-value="{{ml.item.id}}" data-live-search="true" title="Choose one...">
-                       {% for i in items %}
-                            <option data-value="{{i.id}}">{{ i }}</option>
-                       {% endfor %}
-                    </select>
-                    <ul class="itemlist" data-value="{{ml.item.id}}" >
-                        {% for mi in mission_items %}
-                            {% if mi.storage_id == ml.id %}
-                                <li data-value="{{mi.item.id}}">
-                                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" checked>{{mi.item}}</li>
-                            {% endif %}
-                        {% endfor %}
-                    </ul>
-                </div>
+        <div class="controlpanel">
+            <button type="submit"  class="btn btn-primary" >Submit</button>
+            <button type="button"  class="btn btn-secondary"  onclick="location.href='{{ BASE_URL }}/missions_list.html'">Cancel</button>
+        </div>
+        <br />
+        <br />
+        <div class="dropdown">
+            <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Add lugguage
+            </button>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                {% for al in avail_luggage %}
+                <a class="dropdown-item avail_luggage_item" data-value="{{al.id}}" href="#">{{ al }}</a>
+                {% endfor %}
             </div>
-          {% endfor %}
-      </div>
-    </div>
+        </div>
+        <br />
+        <h2>Items:</h2>
+        <div class="container overflow-hidden">
+          <div class="row gx-5" id="luggage-items-list" >
+              {% for ml in mission_luggage %}
+                <div class="col" data-value="{{ml.item.id}}">
+                    <div class="p-3 border bg-light">
+                        <h5>{{ ml.item }} (Weight: {{ml.item.weight}})</h5>
+                        <script>
+                            $('#selectpicker{{ml.item.id}}').selectpicker();
+                        </script>
+                        <select class="selectpicker" id="selectpicker{{ml.item.id}}" data-value="{{ml.item.id}}" data-live-search="true" title="Choose one...">
+                           {% for i in items %}
+                                <option data-value="{{i.id}}">{{ i }}</option>
+                           {% endfor %}
+                        </select>
+                        <ul class="itemlist" data-value="{{ml.item.id}}" >
+                            {% for mi in mission_items %}
+                                {% if mi.storage_id == ml.id %}
+                                    <li data-value="{{mi.item.id}}">
+                                        <input class="form-check-input" type="checkbox" value="{{mi.item.id}}" id="flexCheckChecked" checked>
+                                        {{mi.item}}
+                                        <span class="weight">(Weight: {{mi.item.weight}})</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+              {% endfor %}
+          </div>
+        </div>
+    </form>
 {% endblock content %}
