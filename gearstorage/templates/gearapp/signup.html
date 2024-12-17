@@ -1,0 +1,14 @@
+{% extends "gearapp/base.html" %}
+
+{% block content %}
+
+<h2>Sign up</h2>
+<form method="post">
+  <div class="form-group">
+    {% csrf_token %}
+    {{ form }}
+    <button type="submit">Sign Up</button>
+  </div>
+</form>
+
+{% endblock content %}

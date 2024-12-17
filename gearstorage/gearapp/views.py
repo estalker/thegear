@@ -1,25 +1,113 @@
-from django.shortcuts import render
-from .models import Item, ItemCategory
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login, logout
+from django.urls import reverse_lazy
+from django.views import generic
+from rest_framework import generics
+from .models import Item, ItemCategory, MainCategory, Mission, MissionItem
+from .serializers import ItemSerializer
+from django.contrib.auth.forms import UserCreationForm
+from .forms import MissionForm
 
 # Create your views here.
 def items_list(request):
-    items = Item.objects.all()
+    items = []
+    if request.user.id is not None:
+        items = Item.objects.all().select_related("item_category").select_related("item_category__maincategory").filter(item_category__maincategory__user_id=request.user)
 
     context = {
-        'items':items
+        'items':items,
     }
 
     return render(request, 'gearapp/items_list.html', context)
 
-def storage_report(request):
-    items = Item.objects.all().order_by('current_storage')
 
-    cities = [{"name": "Mumbai", "population": "19,000,000", "country": "India"},
-        {"name": "Calcutta", "population": "15,000,000", "country": "India"},
-        {"name": "New York", "population": "20,000,000", "country": "USA"},
-        {"name": "Chicago", "population": "7,000,000", "country": "USA"},
-        {"name": "Tokyo", "population": "33,000,000", "country": "Japan"}, ]
+def current_storage(request):
+    items = []
+    if request.user.id is not None:
+        items = Item.objects.all().select_related("item_category").select_related("item_category__maincategory").filter(item_category__maincategory__user_id=request.user).order_by('current_storage')
+    context = {'items': items}
 
-    context = {'items': items, "cities": cities}
+    return render(request, 'gearapp/current_storage.html', context)
 
-    return render(request, 'gearapp/storage_report.html', context)
+
+def usual_storage(request):
+    items = []
+    if request.user.id is not None:
+        items = Item.objects.all().select_related("item_category").select_related("item_category__maincategory").filter(item_category__maincategory__user_id=request.user).order_by('last_storage')
+    context = {'items': items}
+
+    return render(request, 'gearapp/usual_storage.html', context)
+
+def missions_list(request):
+    missions = []
+    if request.user.id is not None:
+        missions = Mission.objects.all().filter(user_id=request.user).order_by('-date_start')
+    context = {'missions': missions}
+
+    return render(request, 'gearapp/missions_list.html', context)
+
+def mission_create_view(request):
+    # dictionary for initial data with
+    # field names as keys
+    context = {}
+
+    # add the dictionary during initialization
+    form = MissionForm(request.POST or None)
+
+    if form.is_valid():
+        #form.data["user"] = request.user
+        # form.save()
+        obj = form.save(commit=False)
+        obj.user = request.user
+        obj.save()
+        return render(request, "gearapp/missions_list.html", context)
+
+
+    context['form'] = form
+    return render(request, "gearapp/mission_create_view.html", context)
+
+
+def mission_view(request, id):
+    context={}
+
+    if request.user.id is not None:
+        mission = Mission.objects.all().filter(user_id=request.user).get(id=id)
+        context["data"] = mission
+
+        lug_cat = MainCategory.objects.all().filter(user_id=request.user).filter(name = 'Luggage')[:1].get()
+        all_items = Item.objects.all().select_related("item_category").select_related("item_category__maincategory").filter(
+            item_category__maincategory__user_id=request.user)
+        context["items"] = all_items.exclude(item_category__maincategory__id=lug_cat.id)
+        context["avail_luggage"] = all_items.filter(item_category__maincategory__id=lug_cat.id)
+
+        context["mission_luggage"] = MissionItem.objects.all().filter(mission_id = mission.id).filter(storage=None)
+        context["mission_items"] = MissionItem.objects.all().filter(mission_id = mission.id).exclude(storage=None)
+
+    return render(request, "gearapp/mission_view.html", context)
+
+
+class ItemAPIView(generics.ListAPIView):
+    queryset = Item.objects.all()
+    serializer_class = ItemSerializer
+
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return redirect('/') # Replace 'home' with the name of your home page URL
+        else:
+            return render(request, 'gearapp/login.html', {'error': 'Invalid credentials.'})
+    else:
+        return render(request, 'gearapp/login.html')
+
+def logout_view(request):
+    logout(request)
+    return redirect('login.html') # Replace 'login' with the name of your login page URL
+
+class SignUpView(generic.CreateView):
+    form_class = UserCreationForm
+    success_url = reverse_lazy('login')
+    template_name = 'gearapp/signup.html'

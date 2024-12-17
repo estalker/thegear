@@ -1,0 +1,19 @@
+{% extends "gearapp/base.html" %}
+
+{% block content %}
+
+<a href="/mission_create_view.html"><button type="button" class="btn btn-primary" >Add Mission</button></a>
+<br />
+<br />
+<div>
+    {% if missions %}
+        <ul class="list-group">{% for m in missions %}
+            <li class="list-group-item">
+                <a href="/mission_view.html/{{ m.id }}">{{ m.title }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</div><!-- end div card columns -->
+
+{% endblock content %}

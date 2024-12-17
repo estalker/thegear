@@ -4,7 +4,7 @@
 
 
 
-{% regroup items by current_storage as storages %}
+{% regroup items by last_storage as storages %}
 <div>
     {% if storages %}
         {% for st in storages %}
@@ -17,6 +17,8 @@
                 {% for item in st.list %}
                 <li>
                     {{ item.brand }} {{ item.name }} {{ item.weight }}g
+                    {% if item.lease_person is not null %}
+                    {% endif %}
                 </li>
                 {% endfor %}
             </ul>

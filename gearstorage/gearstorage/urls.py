@@ -16,12 +16,20 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from gearapp.views import items_list, storage_report
+from gearapp.views import items_list, current_storage, usual_storage, ItemAPIView, login_view, logout_view, SignUpView, missions_list, mission_create_view, mission_view
 from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('index.html', items_list),
-    path('storage_report.html', storage_report)
+    path('', items_list),
+    path('current_storage.html', current_storage),
+    path('usual_storage.html', usual_storage),
+    path('missions_list.html', missions_list),
+    path('mission_create_view.html', mission_create_view),
+    path('mission_view.html/<str:id>', mission_view),
+    path('api/itemlist/',ItemAPIView.as_view()),
+    path('login.html', login_view, name='login'),
+    path('logout.html', logout_view, name='logout'),
+    path('signup.html', SignUpView.as_view(), name='signup')
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

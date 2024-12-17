@@ -1,0 +1,24 @@
+{% extends "gearapp/base.html" %}
+
+{% block content %}
+
+<h3 class="fw-normal mb-3 pb-3" style="letter-spacing: 1px;">Log in</h3>
+{% if error %}
+    <p>{{ error }}</p>
+{% endif %}
+<form method="post" action="{% url 'login' %}">
+    {% csrf_token %}
+    <div data-mdb-input-init class="form-outline mb-4">
+        <input type="test" name="username" placeholder="Username" class="form-control form-control-lg" />
+    </div>
+    <div data-mdb-input-init class="form-outline mb-4">
+        <input type="password" name="password" placeholder="Password" class="form-control form-control-lg" />
+    </div>
+    <div class="pt-1 mb-4">
+        <button data-mdb-button-init data-mdb-ripple-init class="btn btn-info btn-lg btn-block" type="submit">Login</button>
+    </div>
+    <!--<p class="small mb-5 pb-lg-2"><a class="text-muted" href="#!">Forgot password?</a></p>/-->
+    <p>Don't have an account? <a href="/signup.html" class="link-info">Register here</a></p>
+</form>
+
+{% endblock content %}

@@ -1,0 +1,30 @@
+{% extends "gearapp/base.html" %}
+
+{% block content %}
+
+
+
+{% regroup items by current_storage as storages %}
+<div>
+    {% if storages %}
+        {% for st in storages %}
+            {% if st.grouper is null %}
+                <h3>Lost</h3>
+            {% else %}
+                <h3>{{ st.grouper }}</h3>
+            {% endif %}
+            <ul class="list-unstyled ">
+                {% for item in st.list %}
+                <li>
+                    {{ item.brand }} {{ item.name }} {{ item.weight }}g
+                    {% if item.lease_person is not null %}
+                        (<b>{{ item.lease_person }}</b>)
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        {% endfor %}
+    {% endif %}
+</div><!-- end div card columns -->
+
+{% endblock content %}

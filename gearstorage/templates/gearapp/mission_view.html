@@ -1,0 +1,141 @@
+{% extends "gearapp/base.html" %}
+
+{% block content %}
+    <style>
+        .col{
+            min-height: 500px;
+            }
+    </style>
+    <script type="text/javascript">
+       function initializeBootstrapSelect(selector) {
+            $(selector).each(function () {
+                const $select = $(this);
+                if (!$select.data('selectpicker')) {
+                    $select.selectpicker(); // Инициализируем только неинициализированные
+                } else {
+                    $select.selectpicker('refresh'); // Обновляем существующие
+                }
+            });
+        }
+
+        function updateAllWeights() {
+
+        }
+
+        $(document).ready(function () {
+            // Обработчик клика на элементы dropdown
+              $('.avail_luggage_item').on('click', function (e) {
+                e.preventDefault(); // Предотвращаем переход по ссылке
+
+                const selectedValue = $(this).data('value'); // Получаем значение data-value
+                const selectedText = $(this).text(); // Получаем текст элемента
+
+                // Ссылка на список, который будем заполнять
+                const $targetList = $('#luggage-items-list');
+
+                const isAlreadyAdded = $targetList.find('div').filter(function () {
+                    return $(this).data('value') === selectedValue;
+                }).length > 0;
+
+                if (isAlreadyAdded) {
+                    alert(`Элемент "${selectedText}" уже добавлен в список!`);
+                } else {
+                    // Добавляем элемент в список
+                    const col = `<div class="col" data-value="${selectedValue}">
+                                    <div class="p-3 border bg-light">
+                                        <h5>${selectedText}</h5>
+                                        <select class="selectpicker" id="selectpicker${selectedValue}" data-value="${selectedValue}" data-live-search="true" title="Choose one...">
+                                        {% for i in items %}
+                                            <option data-value="{{i.id}}">{{ i }}</option>
+                                        {% endfor %}
+                                        </select>
+                                        <ul class="itemlist" data-value="${selectedValue}" >
+                                        </ul>
+                                    </div>
+                                </div>`
+                    $targetList.append(col);
+                }
+
+                initializeBootstrapSelect('.selectpicker'); // Инициализируем новый select
+              });
+
+            // Обработчик выбора элемента
+             $(document).on('changed.bs.select', '.selectpicker', function (event, clickedIndex) {
+                const $select = $(this);
+                const selectedOption = $select.find('option').eq(clickedIndex);
+                const value = selectedOption.data('value');
+                const text = selectedOption.text();
+
+                if (value) {
+                    // Проверка, что элемент уже существует в любом другом списке
+                    const isAlreadyInOtherList = $('.itemlist').find('li').filter(function () {
+                        return $(this).data('value') === value;
+                    }).length > 0;
+
+                    if (isAlreadyInOtherList) {
+                        alert(`Элемент "${text}" уже существует в этом или другом списке!`);
+                        return;
+                    }
+
+                    // Ищем связанный список с классом .itemlist по data-value
+                    const targetListSelector = `.itemlist[data-value="${$select.data('value')}"]`;
+                    const $targetList = $(targetListSelector);
+
+                    if ($targetList.length) {
+                        // Добавляем элемент в целевой список
+                        const newItem = `<li><input class="form-check-input" type="checkbox" value="${value}" id="flexCheckChecked" checked>${text}</li>`;
+                        $targetList.append(newItem);
+                    }
+
+                    // Убираем выбор
+                    selectedOption.prop('selected', false);
+                    $select.selectpicker('refresh');
+                }
+            });
+        });
+    </script>
+    <h1>Title: {{ data.title }}</h1>
+    Date start: {{ data.date_start }} <br />
+    Lenght: {{ data.duration }} <br />
+    Description: {{ data.description }}<br/>
+    <br />
+    <div class="dropdown">
+        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Add lugguage
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            {% for al in avail_luggage %}
+            <a class="dropdown-item avail_luggage_item" data-value="{{al.id}}" href="#">{{ al }}</a>
+            {% endfor %}
+        </div>
+    </div>
+    <br />
+    <h2>Items:</h2>
+    <div class="container overflow-hidden">
+      <div class="row gx-5" id="luggage-items-list" >
+          {% for ml in mission_luggage %}
+            <div class="col" data-value="{{ml.item.id}}">
+                <div class="p-3 border bg-light">
+                    <h5>{{ ml.item }}</h5>
+                    <script>
+                        $('#selectpicker{{ml.item.id}}').selectpicker();
+                    </script>
+                    <select class="selectpicker" id="selectpicker{{ml.item.id}}" data-value="{{ml.item.id}}" data-live-search="true" title="Choose one...">
+                       {% for i in items %}
+                            <option data-value="{{i.id}}">{{ i }}</option>
+                       {% endfor %}
+                    </select>
+                    <ul class="itemlist" data-value="{{ml.item.id}}" >
+                        {% for mi in mission_items %}
+                            {% if mi.storage_id == ml.id %}
+                                <li data-value="{{mi.item.id}}">
+                                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" checked>{{mi.item}}</li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+          {% endfor %}
+      </div>
+    </div>
+{% endblock content %}
