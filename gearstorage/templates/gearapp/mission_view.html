@@ -220,9 +220,53 @@
                 updateTargetListNames();
             });
 
+             $('#mission_form').on('submit', function (event) {
+                // Очищаем старые ошибки
+                $('#error-message').text('');
+
+                // Получаем значения полей
+                const title = $('#id-title').val().trim();
+                const date_start = $('#id-date_start').val().trim();
+                const duration = $('#id-duration').val().trim();
+                const description = $('#id-description').val().trim();
+
+
+                // Валидация названия
+                if (!title) {
+                    $('#error-message').text('Название не должно быть пустым.');
+                    event.preventDefault(); // Предотвращаем отправку формы
+                    return;
+                }
+
+                // Валидация date_start
+                if (!date_start || !Date.parse(date_start) || !validateDateFormat(date_start)) {
+                    $('#error-message').text('Введите корректную дату.');
+                    event.preventDefault();
+                    return;
+                }
+
+                // Валидация duration
+                if (!duration || !validateInteger(duration)) {
+                    $('#error-message').text('Введите корректную длительность путеществия.');
+                    event.preventDefault();
+                    return;
+                }
+
+                // Дополнительная проверка или действия
+            });
+            function validateDateFormat(date) {
+                const dateRegex = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+                return dateRegex.test(date);
+            }
+
+            function validateInteger(input) {
+                const num = Number(input); // Преобразуем строку в число
+                return Number.isInteger(num); // Проверяем, является ли это целым числом
+            }
         });
     </script>
-    <form method="POST">
+    <div id="error-message" style="color: red;"></div>
+    <form id="mission_form" method="POST">
         <!-- Security token -->
         {% csrf_token %}
 
@@ -230,7 +274,7 @@
             Title: <input id="id-title" name="title" class="form-control" value="{{ data.title }}"><br />
             Date start: <input id="id-date_start" name="date_start" class="form-control" value="{{data.date_start|date:"Y-m-d" }}"><br />
             Length: <input id="id-duration" name="duration" class="form-control" value="{{ data.duration }}"><br />
-            Description: <textarea id="id-descrition" name="description" class="form-control">{{ data.description }}</textarea><br/>
+            Description: <textarea id="id-description" name="description" class="form-control">{{ data.description }}</textarea><br/>
         </div>
         <div class="controlpanel">
             <button type="submit"  class="btn btn-primary" >Submit</button>
