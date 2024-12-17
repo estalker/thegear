@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from gearapp.views import items_list, current_storage, usual_storage, ItemAPIView, login_view, logout_view, SignUpView, missions_list, mission_create_view, mission_view
+from gearapp.views import items_list, current_storage, usual_storage, ItemAPIView, login_view, logout_view, SignUpView, missions_list, mission_create_view, mission_view, mission_print_out
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import RedirectView
@@ -29,6 +29,7 @@ urlpatterns = [
     path('missions_list.html', missions_list),
     path('mission_create_view.html', mission_create_view),
     path('mission_view.html/<str:id>', mission_view),
+    path('mission_print_out.html/<str:id>', mission_print_out),
     path('api/itemlist/',ItemAPIView.as_view()),
     path('login.html', login_view, name='login'),
     path('logout.html', logout_view, name='logout'),

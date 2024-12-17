@@ -9,12 +9,14 @@ from django.contrib.auth.forms import UserCreationForm
 from .forms import MissionForm
 import re
 from collections import defaultdict
+from django.db.models import Sum
+
 
 # Create your views here.
 def items_list(request):
     items = []
     if request.user.id is not None:
-        items = Item.objects.all().select_related("item_category").select_related("item_category__maincategory").filter(item_category__maincategory__user_id=request.user)
+        items = Item.objects.all().select_related("item_category").select_related("item_category__maincategory").filter(item_category__maincategory__user_id=request.user).order_by("item_category__maincategory__order").order_by("item_category__order")
 
     context = {
         'items':items,
@@ -43,7 +45,7 @@ def usual_storage(request):
 def missions_list(request):
     missions = []
     if request.user.id is not None:
-        missions = Mission.objects.all().filter(user_id=request.user).order_by('-date_start')
+        missions = Mission.objects.filter(user_id=request.user).annotate(total_weight=Sum('missiont_item__item__weight')).order_by('-date_start')
     context = {'missions': missions}
 
     return render(request, 'gearapp/missions_list.html', context)
@@ -95,7 +97,7 @@ def mission_view(request, id):
                 obj.user = request.user
                 obj.save()
 
-                MissionItem.objects.filter(mission_id = id).delete()
+                MissionItem.objects.filter(mission_id=id).delete()
 
                 cols = parse_post_data(request.POST)
                 for col_index, items in cols.items():
@@ -109,10 +111,6 @@ def mission_view(request, id):
                         mi.item_id = value
                         mi.storage_id = storage.id
                         mi.save()
-
-
-
-
 
     if request.user.id is not None:
         mission = Mission.objects.all().filter(user_id=request.user).get(id=id)
@@ -129,6 +127,20 @@ def mission_view(request, id):
 
     return render(request, "gearapp/mission_view.html", context)
 
+def mission_print_out(request, id):
+    context = {}
+
+    if request.user.id is not None:
+        mission = Mission.objects.all().filter(user_id=request.user).get(id=id)
+        context["data"] = mission
+
+        all_items = Item.objects.all().select_related("item_category").select_related(
+            "item_category__maincategory").filter(item_category__maincategory__user_id=request.user)
+
+        context["items"] = all_items
+        context["mission_items"] = MissionItem.objects.select_related("item").select_related("item__current_storage").filter(mission_id=mission.id).order_by("item__current_storage")
+
+    return render(request, "gearapp/mission_print_out.html", context)
 
 class ItemAPIView(generics.ListAPIView):
     queryset = Item.objects.all()

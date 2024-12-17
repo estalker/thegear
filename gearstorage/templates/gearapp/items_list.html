@@ -2,26 +2,25 @@
 
 {% block content %}
 
-{% if mc %}
-    <ul>
-    {% for c in mc %}
-        <li>{{ c.name }}</li>
-    {% endfor %}
-    </ul>
-{% endif %}
+{% regroup items by item_category as itemcategories %}
 
-<div class="card-columns">
-    {% if items %}
-        {% for item in items %}
-            <div class="card" style="width: 10rem;">
-                <img class="card-img-top" src="/{{ item.image }}" alt="Card image cap">
-                <div class="card-body">
-                    <b class="card-title">{{ item.brand }} {{ item.name }}</b>
-                    <p class="card-text">{{ item.weight }}g</p>
+{% if itemcategories %}
+    {% for ic in itemcategories %}
+        {% if ic.list %}
+            <h2 class="clearfix ">{{ ic.grouper }}</h2>
+            <div class="card-columns">
+            {% for item in ic.list %}
+                <div class="card" style="width: 10rem;">
+                    <img class="card-img-top" src="/{{ item.image }}" alt="Card image cap">
+                    <div class="card-body">
+                        <b class="card-title">{{ item.brand }} {{ item.name }}</b>
+                        <p class="card-text">{{ item.weight }}g</p>
+                    </div>
                 </div>
-            </div>
-        {% endfor %}
-    {% endif %}
-</div><!-- end div card columns -->
+            {% endfor %}
+            </div><!-- end div card columns -->
+        {% endif %}
+    {% endfor %}
+{% endif %}
 
 {% endblock content %}

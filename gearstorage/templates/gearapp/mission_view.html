@@ -129,7 +129,7 @@
                     const col = `<div class="col" data-value="${selectedValue}">
                                     <div class="p-3 border bg-light">
                                         <h5>${selectedText} (Weight: ${weight})</h5>
-                                        <select class="selectpicker" id="selectpicker${selectedValue}" data-value="${selectedValue}" data-live-search="true" title="Choose one...">
+                                        <select class="selectpicker" id="selectpicker${selectedValue}" data-value="${selectedValue}" data-dropup-auto="false" data-live-search="true" title="Choose one...">
                                         {% for i in items %}
                                             <option data-value="{{i.id}}">{{ i }}</option>
                                         {% endfor %}
@@ -229,7 +229,7 @@
         <div>
             Title: <input id="id-title" name="title" class="form-control" value="{{ data.title }}"><br />
             Date start: <input id="id-date_start" name="date_start" class="form-control" value="{{data.date_start|date:"Y-m-d" }}"><br />
-            Lenght: <input id="id-duration" name="duration" class="form-control" value="{{ data.duration }}"><br />
+            Length: <input id="id-duration" name="duration" class="form-control" value="{{ data.duration }}"><br />
             Description: <textarea id="id-descrition" name="description" class="form-control">{{ data.description }}</textarea><br/>
         </div>
         <div class="controlpanel">
@@ -238,6 +238,7 @@
         </div>
         <br />
         <br />
+        <h2>Luggage:</h2>
         <div class="dropdown">
             <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 Add lugguage
@@ -249,7 +250,6 @@
             </div>
         </div>
         <br />
-        <h2>Items:</h2>
         <div class="container overflow-hidden">
           <div class="row gx-5" id="luggage-items-list" >
               {% for ml in mission_luggage %}
@@ -259,7 +259,7 @@
                         <script>
                             $('#selectpicker{{ml.item.id}}').selectpicker();
                         </script>
-                        <select class="selectpicker" id="selectpicker{{ml.item.id}}" data-value="{{ml.item.id}}" data-live-search="true" title="Choose one...">
+                        <select class="selectpicker" id="selectpicker{{ml.item.id}}" data-value="{{ml.item.id}}" data-dropup-auto="false" data-live-search="true" title="Choose one...">
                            {% for i in items %}
                                 <option data-value="{{i.id}}">{{ i }}</option>
                            {% endfor %}

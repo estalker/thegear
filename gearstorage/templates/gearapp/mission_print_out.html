@@ -1,0 +1,44 @@
+{% extends "gearapp/base.html" %}
+
+{% block content %}
+<h1>{{ data.title }}</h1>
+Date start: {{data.date_start|date:"Y-m-d" }}<br />
+Length: {{ data.duration }}<br />
+Description: {{ data.description }}<br/>
+<br />
+<div class="row">
+    <div class="col">
+        <h2 class="mt-10">Luggage:</h2>
+        {% for ml in mission_items %}
+            {% if ml.storage_id is None %}
+            <h4>{{ml.item}} ({{ml.item.weight}})</h4>
+                <ul>
+                    {% for mi in mission_items %}
+                        {% if mi.storage_id == ml.id %}
+                            <li>{{mi.item}} ({{mi.item.weight}})</li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% regroup mission_items by item.current_storage.name as currentstoragelugguages %}
+    <div class="col">
+        <h2 class="mt-10">Storage:</h2>
+        {%for cs in currentstoragelugguages%}
+            {%if cs.list %}
+                <h4>{{cs.grouper}}</h4>
+                <ul>
+                {%for ml in cs.list%}
+                    {% if ml.item.damaged %}
+                        <li>{{ml.item}} - damaged</li>
+                    {% else%}
+                        <li>{{ml.item}}</li>
+                    {% endif %}
+                {% endfor %}
+                </ul>
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% endblock content %}

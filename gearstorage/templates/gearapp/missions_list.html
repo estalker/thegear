@@ -2,17 +2,24 @@
 
 {% block content %}
 
-<a href="/mission_create_view.html"><button type="button" class="btn btn-primary" >Add Mission</button></a>
+<a href="/mission_create_view.html"><button type="button" class="btn btn-primary">Add Mission</button></a>
 <br />
 <br />
 <div>
     {% if missions %}
-        <ul class="list-group">{% for m in missions %}
-            <li class="list-group-item">
-                <a href="/mission_view.html/{{ m.id }}">{{ m.title }}</a>
-            </li>
-            {% endfor %}
-        </ul>
+        {% for m in missions %}
+            <div class="row">
+                <div class="col-sm p-3 border">
+                    <a href="/mission_view.html/{{ m.id }}">{{ m.title }} ({{m.date_start|date:"Y-m-d"}})</a>
+                </div>
+                <div class="col-sm p-3 border">
+                    Total weight: {{ m.total_weight }}
+                </div>
+                <div class="col-sm p-3 border">
+                    <a href="/mission_print_out.html/{{ m.id }}">Print Out</a>
+                </div>
+            </div>
+        {% endfor %}
     {% endif %}
 </div><!-- end div card columns -->
 
