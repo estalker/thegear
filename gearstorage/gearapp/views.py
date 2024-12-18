@@ -14,6 +14,9 @@ from django.db.models import Sum
 
 # Create your views here.
 def items_list(request):
+    """
+      Список предметов разделенный по категориям
+    """
     items = []
     if request.user.id is not None:
         items = Item.objects.all().select_related("item_category").select_related("item_category__maincategory").filter(item_category__maincategory__user_id=request.user).order_by("item_category__maincategory__order").order_by("item_category__order")
@@ -26,6 +29,9 @@ def items_list(request):
 
 
 def current_storage(request):
+    """
+        Текущее нахождение вещей с указанием контактов людей, одолживших вещь
+    """
     items = []
     if request.user.id is not None:
         items = Item.objects.all().select_related("item_category").select_related("item_category__maincategory").filter(item_category__maincategory__user_id=request.user).order_by('current_storage')
@@ -35,6 +41,9 @@ def current_storage(request):
 
 
 def usual_storage(request):
+    """
+        Обычное местоположение вещей. Нужно чтобы знать где вещь должна быть, если ее переместили или одолжили
+    """
     items = []
     if request.user.id is not None:
         items = Item.objects.all().select_related("item_category").select_related("item_category__maincategory").filter(item_category__maincategory__user_id=request.user).order_by('last_storage')
@@ -42,7 +51,11 @@ def usual_storage(request):
 
     return render(request, 'gearapp/usual_storage.html', context)
 
+
 def missions_list(request):
+    """
+        Список поездок
+    """
     missions = []
     if request.user.id is not None:
         missions = Mission.objects.filter(user_id=request.user).annotate(total_weight=Sum('missiont_item__item__weight')).order_by('-date_start')
@@ -52,6 +65,9 @@ def missions_list(request):
 
 
 def mission_create_view(request):
+    """
+        Создание миссии. Ввод справочной информации
+    """
     # dictionary for initial data with
     # field names as keys
     context = {}
@@ -60,19 +76,25 @@ def mission_create_view(request):
     form = MissionForm(request.POST or None)
 
     if form.is_valid():
-        #form.data["user"] = request.user
-        # form.save()
         obj = form.save(commit=False)
         obj.user = request.user
         obj.save()
         return render(request, "gearapp/missions_list.html", context)
-
 
     context['form'] = form
     return render(request, "gearapp/mission_create_view.html", context)
 
 
 def parse_post_data(post_data):
+    """
+     Специфичексий метод для парсинга параметров POST
+
+     Args:
+         post_data (POST): данные request.Post
+
+     Returns:
+         defaultdict: словарь сумок и предметов в них
+     """
     result = defaultdict(lambda: defaultdict(list))  # Многомерный словарь для вложенных данных
     pattern = r'^col\[(\d+)\]\[items\]\[(\d+)\]$'  # Регулярное выражение для извлечения индексов
 
@@ -85,8 +107,16 @@ def parse_post_data(post_data):
 
     return result
 
+
 def mission_view(request, id):
-    context={}
+    """
+       Правка багажа в миссии. исправление справочной информации
+
+       Args:
+         request: данные запроса
+         id (int): идентификатор миссии
+    """
+    context = {}
 
     if request.method == 'POST':
         if request.user.id is not None:
@@ -127,7 +157,15 @@ def mission_view(request, id):
 
     return render(request, "gearapp/mission_view.html", context)
 
+
 def mission_print_out(request, id):
+    """
+        Печать чеклиста отдельной миссиии
+
+        Args:
+         request: данные запроса
+         id (int): идентификатор миссии
+    """
     context = {}
 
     if request.user.id is not None:
@@ -142,9 +180,14 @@ def mission_print_out(request, id):
 
     return render(request, "gearapp/mission_print_out.html", context)
 
+
 class ItemAPIView(generics.ListAPIView):
+    """
+        ListAPIView для взаимодействия с ботом
+    """
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
+
 
 def login_view(request):
     if request.method == 'POST':
@@ -159,9 +202,11 @@ def login_view(request):
     else:
         return render(request, 'gearapp/login.html')
 
+
 def logout_view(request):
     logout(request)
     return redirect('login.html') # Replace 'login' with the name of your login page URL
+
 
 class SignUpView(generic.CreateView):
     form_class = UserCreationForm
